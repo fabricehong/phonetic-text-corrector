@@ -77,8 +77,8 @@ function processMarkdownFile(inputPath: string, outputDir: string): void {
  * Main function
  */
 function main(): void {
-  const inputDir = path.join(__dirname, '../tests/fixtures/correspondance-dataset-original');
-  const outputDir = path.join(__dirname, '../tests/fixtures/correspondance-dataset');
+  const inputDir = path.join(__dirname, '../tests/global-evaluations/fixtures/correspondance-dataset-original');
+  const outputDir = path.join(__dirname, '../tests/global-evaluations/fixtures/correspondance-dataset');
 
   console.log('🚀 Starting YAML conversion process...\n');
 

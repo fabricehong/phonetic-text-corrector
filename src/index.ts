@@ -1,5 +1,5 @@
 // Main service
-export { TextCorrectorService } from './text-corrector.service';
+export { TextCorrectorSimpleService } from './text-corrector-simple.service';
 
 // Types
 export type {
@@ -9,9 +9,9 @@ export type {
 } from './types';
 
 // Phonetic algorithms
-export { DoubleMetaphoneAlgorithm } from './doubleMetaphone';
-export { FrenchSonnexAlgorithm } from './frenchSonnex';
-export { FrenchPhoneticAlgorithm } from './frenchPhonetic';
+export { DoubleMetaphoneAlgorithm } from './phonetic/doubleMetaphone';
+export { FrenchSonnexAlgorithm } from './phonetic/frenchSonnex';
+export { FrenchPhoneticAlgorithm } from './phonetic/frenchPhonetic';
 
 // Utilities
 export { ratio } from './utils';

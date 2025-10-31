@@ -1,8 +1,8 @@
-import { PhoneticAlgorithm, CorrectionResult, CorrectionDetail } from './types';
-import { DoubleMetaphoneAlgorithm } from './doubleMetaphone';
+import { PhoneticAlgorithm, CorrectionResult, CorrectionDetail, TextCorrector } from './types';
+import { DoubleMetaphoneAlgorithm } from './phonetic/doubleMetaphone';
 import { ratio } from './utils';
 
-export class TextCorrectorService {
+export class TextCorrectorAdvancedService implements TextCorrector{
     private vocabulary: string[] = [];
     private phoneticAlgorithm: PhoneticAlgorithm;
     private threshold: number = 0.7;
@@ -134,14 +134,14 @@ export class TextCorrectorService {
             const phoneticSimilarity = textKey && refKey ? ratio(textKey, refKey) : 0;
 
             // Calculate combined score without length penalty
-            const combinedScoreNoPenalty = 
-                (stringSimilarity * this.stringWeight) + 
+            const combinedScoreNoPenalty =
+                (stringSimilarity * this.stringWeight) +
                 (phoneticSimilarity * this.phoneticWeight);
 
             // Calculate length penalty
             let lengthPenalty = 1.0;
             if (this.lengthWeight > 0 && textKey && refKey) {
-                const lengthRatio = Math.min(textKey.length, refKey.length) / 
+                const lengthRatio = Math.min(textKey.length, refKey.length) /
                                   Math.max(textKey.length, refKey.length);
                 lengthPenalty = (1 - this.lengthWeight) + (lengthRatio * this.lengthWeight);
             }

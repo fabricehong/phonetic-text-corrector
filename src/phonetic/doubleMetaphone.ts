@@ -1,5 +1,5 @@
 import { doubleMetaphone } from 'double-metaphone';
-import { PhoneticAlgorithm } from './types';
+import { PhoneticAlgorithm } from '../types';
 
 export class DoubleMetaphoneAlgorithm implements PhoneticAlgorithm {
     encode(text: string): string {

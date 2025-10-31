@@ -1,4 +1,4 @@
-import { DoubleMetaphoneAlgorithm } from '../../src/doubleMetaphone';
+import { DoubleMetaphoneAlgorithm } from './doubleMetaphone';
 
 describe.skip('DoubleMetaphoneAlgorithm', () => {
     const algorithm = new DoubleMetaphoneAlgorithm();

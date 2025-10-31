@@ -24,6 +24,7 @@
     "talisman": "^1.1.4"
   },
   "devDependencies": {
+    "@babel/preset-typescript": "^7.28.5",
     "@types/jest": "^29.5.0",
     "@types/js-yaml": "^4.0.9",
     "jest": "^29.5.0",

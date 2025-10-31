@@ -1,4 +1,4 @@
-import { PhoneticAlgorithm } from './types';
+import { PhoneticAlgorithm } from '../types';
 import sonnex from 'talisman/phonetics/french/sonnex';
 
 export class FrenchSonnexAlgorithm implements PhoneticAlgorithm {

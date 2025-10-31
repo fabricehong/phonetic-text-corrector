@@ -1,4 +1,4 @@
-import { FrenchSonnexAlgorithm } from '../../src/frenchSonnex';
+import { FrenchSonnexAlgorithm } from './frenchSonnex';
 
 describe.skip('FrenchSonnexAlgorithm', () => {
     let algorithm: FrenchSonnexAlgorithm;

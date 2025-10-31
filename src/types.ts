@@ -4,11 +4,7 @@ export interface CorrectionDetail {
     original: string;
     corrected: string;
     position: [number, number];  // [start, end]
-    matchType: 'exact' | 'phonetic';
     similarityScore: number;
-    stringSimilarity: number;
-    phoneticSimilarity: number;
-    lengthPenalty: number;
 }
 
 export interface CorrectionResult {
@@ -19,4 +15,9 @@ export interface CorrectionResult {
 
 export interface PhoneticAlgorithm {
     encode(text: string): string;
+}
+
+export interface TextCorrector {
+    setVocabulary(terms: string[]) : void;
+    correctText(text: string): CorrectionResult;
 }
