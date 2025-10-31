@@ -1,11 +1,13 @@
 // Main service
 export { TextCorrectorSimpleService } from './text-corrector-simple.service';
+export { TextCorrectorAdvancedService } from './text-corrector-advanced.service';
 
 // Types
 export type {
     CorrectionDetail,
     CorrectionResult,
-    PhoneticAlgorithm
+    PhoneticAlgorithm,
+    TextCorrector,
 } from './types';
 
 // Phonetic algorithms
