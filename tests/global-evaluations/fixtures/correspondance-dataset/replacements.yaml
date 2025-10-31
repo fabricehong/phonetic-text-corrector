@@ -5,21 +5,10 @@ replacements:
       - Akon
       - Acon
       - a cone
-      - HACOM
-      - ACODE
-      - à Cone
-      - à conne
+      - à Conne
       - Haakon
       - RACON
       - à KON
-      - Acone
-      - AACON
-      - Accode
-      - Econ
-      - AON
-      - à Cône
-      - ACOG
-      - Acorn
       - Arken
       - a con
       - Harkon
@@ -31,11 +20,25 @@ replacements:
       - à Kone
       - Archon
       - à Conn
-      - AppCon
       - AQAN
       - Hagon
-      - Elkon
-      - Ako
-      - Accon
-      - ACOM
-      - Akona
+  - target: Hafas
+    toSearch:
+      - Alphas
+      - Hafa
+      - Hapas
+      - RAFAS
+      - A-Phase
+      - hafaz
+      - ZAFAS
+      - afface
+      - Affense
+      - Haphaz
+      - MAFAs
+      - Hapha
+      - Hava
+      - ATAS
+      - RFAS
+      - AffaSlide
+      - Facelight
+      - IFAS

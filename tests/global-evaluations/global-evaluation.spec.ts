@@ -1,24 +1,13 @@
-import { TextCorrectorSimpleService } from '../../src/text-corrector-simple.service';
-import { FrenchSonnexAlgorithm } from '../../src/phonetic/frenchSonnex';
+import { createTextCorrectorForGlobalEvaluation } from './text-corrector-factory';
+import { evaluateDataset, runGlobalEvaluation } from './evaluation-runner';
+import { TextCorrector } from "../../src/types";
+import path from "path";
+import fs from "fs";
+import * as yaml from "js-yaml";
 
 describe('GlobalEvaluation', () => {
-    let corrector: TextCorrectorSimpleService;
-
-    beforeEach(() => {
-        corrector = new TextCorrectorSimpleService(
-            new FrenchSonnexAlgorithm(),  // phoneticAlgorithm
-            0.7,   // threshold
-            true,   // stringWeight
-        );
-
-        // Set vocabulary terms
-        corrector.setVocabulary(['Hacon']);
+    test('validate all replacements from correspondance-dataset', () => {
+        const corrector = createTextCorrectorForGlobalEvaluation();
+        evaluateDataset('replacements', corrector);
     });
-
-    test('simple correction', () => {
-        const text = "Hakon";
-        const result = corrector.correctText(text);
-        expect(result.correctedText).toContain('Hacon');
-    });
-
 });

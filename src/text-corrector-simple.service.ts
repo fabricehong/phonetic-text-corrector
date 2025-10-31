@@ -1,4 +1,4 @@
-import { PhoneticAlgorithm, CorrectionResult, CorrectionDetail, TextCorrector } from './types';
+import { PhoneticAlgorithm, CorrectionResult, CorrectionDetail, TextCorrector, NgramEvaluation } from './types';
 import { DoubleMetaphoneAlgorithm } from './phonetic/doubleMetaphone';
 import { ratio } from './utils';
 
@@ -7,16 +7,19 @@ export class TextCorrectorSimpleService implements TextCorrector {
     private phoneticAlgorithm: PhoneticAlgorithm;
     private threshold: number = 0.7;
     private debug: boolean;
+    private keepNgramEvaluations: boolean;
     private vocabularyPhonetic: Map<string, string>;
 
     constructor(
         phoneticAlgorithm: PhoneticAlgorithm | null = null,
         threshold: number = 0.7,
-        debug: boolean = false
+        debug: boolean = false,
+        keepNgramEvaluations: boolean = false
     ) {
         this.phoneticAlgorithm = phoneticAlgorithm || new DoubleMetaphoneAlgorithm();
         this.threshold = threshold;
         this.debug = debug;
+        this.keepNgramEvaluations = keepNgramEvaluations;
 
         // Pre-compute phonetic keys for vocabulary
         this.vocabularyPhonetic = new Map();
@@ -31,7 +34,16 @@ export class TextCorrectorSimpleService implements TextCorrector {
 
     correctText(text: string): CorrectionResult {
         if (!text) {
-            return { originalText: text, correctedText: text, corrections: [] };
+            const result: CorrectionResult = {
+                originalText: text,
+                correctedText: text,
+                corrections: []
+            };
+            if (this.keepNgramEvaluations) {
+                result.vocabularyPhoneticKeys = new Map(this.vocabularyPhonetic);
+                result.ngramEvaluations = [];
+            }
+            return result;
         }
 
         // Split text into words
@@ -50,6 +62,7 @@ export class TextCorrectorSimpleService implements TextCorrector {
         const correctedText = [...words];
         const processedPositions = new Set<number>();
         const corrections: CorrectionDetail[] = [];
+        const ngramEvaluations: NgramEvaluation[] = [];
 
         for (const [start, end, ngram] of ngrams) {
             // Skip if positions in this n-gram have already been processed
@@ -62,7 +75,20 @@ export class TextCorrectorSimpleService implements TextCorrector {
                 continue;
             }
 
-            const [bestMatch, similarity] = this.findBestMatch(ngram);
+            const [bestMatch, similarity, bestMatchPhoneticKey, ngramPhoneticKey] = this.findBestMatch(ngram);
+
+            // Store evaluation if keepNgramEvaluations is enabled
+            if (this.keepNgramEvaluations) {
+                ngramEvaluations.push({
+                    ngram: ngram,
+                    ngramPhoneticKey: ngramPhoneticKey,
+                    position: [start, end],
+                    vocabularyBestMatch: bestMatch,
+                    vocabularyBestMatchPhoneticKey: bestMatchPhoneticKey,
+                    similarityScore: similarity,
+                    applied: bestMatch !== null && similarity >= this.threshold
+                });
+            }
 
             if (bestMatch && similarity >= this.threshold) {
                 // Replace n-gram words with the match
@@ -80,43 +106,75 @@ export class TextCorrectorSimpleService implements TextCorrector {
         }
 
         const result = correctedText.filter(word => word).join(' ');
-        return {
+        const correctionResult: CorrectionResult = {
             originalText: text,
             correctedText: result,
             corrections
         };
+
+        if (this.keepNgramEvaluations) {
+            correctionResult.vocabularyPhoneticKeys = new Map(this.vocabularyPhonetic);
+            correctionResult.ngramEvaluations = ngramEvaluations;
+        }
+
+        return correctionResult;
     }
 
-    private findBestMatch(text: string): [string | null, number] {
+    private findBestMatch(text: string): [string | null, number, string | null, string] {
         if (!text || text.length < 2) {
-            return [null, 0];
+            const textKey = this.phoneticAlgorithm.encode(text) || '';
+            return [null, 0, null, textKey];
         }
+
+        const textKey = this.phoneticAlgorithm.encode(text) || '';
 
         // Check for exact matches first (case-insensitive)
         const exactMatch = this.vocabulary.find(word => word.toLowerCase() === text.toLowerCase());
         if (exactMatch) {
             this.debugPrint(`Exact match found: '${text}' -> '${exactMatch}'`);
-            return [exactMatch, 1.0];
+            const exactMatchKey = this.vocabularyPhonetic.get(exactMatch) || null;
+            return [exactMatch, 1.0, exactMatchKey, textKey];
         }
 
-        const textKey = this.phoneticAlgorithm.encode(text) || '';
         this.debugPrint(`\nMatching '${text}' (phonetic: ${textKey})`);
 
-        let bestMatch: string | null = null;
-        let bestScore = 0;
+        let bestMatchAboveThreshold: string | null = null;
+        let bestScoreAboveThreshold = 0;
+        let bestMatchKeyAboveThreshold: string | null = null;
+
+        let absoluteBestMatch: string | null = null;
+        let absoluteBestScore = 0;
+        let absoluteBestMatchKey: string | null = null;
 
         for (const ref of this.vocabulary) {
             const refKey = this.vocabularyPhonetic.get(ref) || '';
             const similarity = textKey && refKey ? ratio(textKey, refKey) : 0;
 
-            if (similarity >= this.threshold && similarity > bestScore) {
-                bestMatch = ref;
-                bestScore = similarity;
+            // Track absolute best match (regardless of threshold)
+            if (similarity > absoluteBestScore) {
+                absoluteBestMatch = ref;
+                absoluteBestScore = similarity;
+                absoluteBestMatchKey = refKey;
+            }
+
+            // Track best match above threshold (for actual correction)
+            if (similarity >= this.threshold && similarity > bestScoreAboveThreshold) {
+                bestMatchAboveThreshold = ref;
+                bestScoreAboveThreshold = similarity;
+                bestMatchKeyAboveThreshold = refKey;
                 this.debugPrint(`  Best match: '${ref}' (phonetic: ${refKey}, score: ${similarity.toFixed(3)})`);
             }
         }
 
-        return [bestMatch, bestScore];
+        // Return best match above threshold if found, otherwise return absolute best for tracking
+        if (bestMatchAboveThreshold) {
+            return [bestMatchAboveThreshold, bestScoreAboveThreshold, bestMatchKeyAboveThreshold, textKey];
+        } else if (this.keepNgramEvaluations && absoluteBestMatch) {
+            // When keepNgramEvaluations is enabled, return absolute best match info even if below threshold
+            return [absoluteBestMatch, absoluteBestScore, absoluteBestMatchKey, textKey];
+        } else {
+            return [null, 0, null, textKey];
+        }
     }
 
     private debugPrint(...args: any[]): void {
