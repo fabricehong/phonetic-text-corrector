@@ -1,5 +1,6 @@
 # Project specific
 tests/fixtures/correspondance-dataset-original/
+tests/fixtures/correspondance-dataset/replacements-*.yaml
 
 # Build outputs
 dist/
