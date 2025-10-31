@@ -37,7 +37,8 @@ The library provides **two correction service implementations**:
      - Encode text with phonetic algorithm
      - Compare phonetic keys using `ratio()` function
      - Return best match if similarity >= threshold
-   - Constructor: `(phoneticAlgorithm?, threshold?, debug?)`
+   - Constructor: `(phoneticAlgorithm?, threshold?, debug?, keepNgramEvaluations?)`
+     - `keepNgramEvaluations`: When true, tracks all n-gram evaluations with phonetic keys and scores for detailed debugging/reporting
 
 2. **`TextCorrectorAdvancedService`** (src/text-corrector-advanced.service.ts)
    - More sophisticated scoring with multiple components
@@ -72,10 +73,22 @@ interface CorrectionDetail {
     similarityScore: number;    // Match quality score (0-1)
 }
 
+interface NgramEvaluation {
+    ngram: string;                              // The n-gram being evaluated
+    ngramPhoneticKey: string;                   // Phonetic encoding of n-gram
+    position: [number, number];                 // Word positions [start, end]
+    vocabularyBestMatch: string | null;         // Best match found in vocabulary
+    vocabularyBestMatchPhoneticKey: string | null; // Phonetic key of best match
+    similarityScore: number;                    // Similarity score (0-1)
+    applied: boolean;                           // Whether correction was applied
+}
+
 interface CorrectionResult {
     originalText: string;
     correctedText: string;
     corrections: CorrectionDetail[];
+    vocabularyPhoneticKeys?: Map<string, string>; // Available when keepNgramEvaluations=true
+    ngramEvaluations?: NgramEvaluation[];         // Available when keepNgramEvaluations=true
 }
 
 interface PhoneticAlgorithm {
@@ -85,6 +98,32 @@ interface PhoneticAlgorithm {
 interface TextCorrector {
     setVocabulary(terms: string[]): void;
     correctText(text: string): CorrectionResult;
+}
+
+// Test-related types
+interface TestCaseError {
+    input: string;                              // Misrecognized text variant
+    inputPhoneticKey: string;                   // Phonetic encoding of input
+    vocabularyBestMatch: string;                // Best match found
+    vocabularyBestMatchPhoneticKey: string;     // Phonetic key of best match
+    similarityScore: number;                    // Similarity score (0-1)
+    correctionApplied: boolean;                 // Whether correction was applied
+    actual: string;                             // Final result (corrected or unchanged)
+}
+
+interface TargetEvaluationReport {
+    target: string;                  // Canonical term being tested
+    totalTests: number;              // Number of variants tested
+    passed: number;                  // Number of successful corrections
+    successRate: number;             // Percentage (0-100)
+    errors: TestCaseError[];         // Failed test cases
+}
+
+interface GlobalEvaluationReport {
+    totalTests: number;
+    passed: number;
+    successRate: number;             // Percentage (0-100)
+    targetReports: TargetEvaluationReport[];
 }
 ```
 
@@ -101,6 +140,59 @@ interface TextCorrector {
 - **Unit tests**: `tests/simple/*.spec.ts` - Test individual correction scenarios
 - **Global evaluations**: `tests/global-evaluations/global-evaluation.spec.ts` - Comprehensive corpus testing
 - **Test fixtures**: `tests/global-evaluations/fixtures/correspondance-dataset-original/*.md` - Markdown files with replacement datasets
+- **Test utilities**:
+  - `text-corrector-factory.ts` - Factory function to create pre-configured corrector instances for tests
+  - `evaluation-runner.ts` - Contains `runGlobalEvaluation()` and `evaluateDataset()` functions
+
+### Global Evaluation Architecture
+
+The testing system uses a layered approach with three levels:
+
+1. **Low-level**: `runGlobalEvaluation(corrector, replacements)`
+   - Pure evaluation logic with no I/O
+   - Takes a configured corrector and replacement specs
+   - Returns a `GlobalEvaluationReport` with detailed statistics
+
+2. **High-level**: `evaluateDataset(datasetName, corrector)`
+   - Orchestration layer that handles all I/O
+   - Builds file path from dataset name: `fixtures/correspondance-dataset/${datasetName}.yaml`
+   - Reads YAML, extracts vocabulary, sets it on corrector
+   - Runs evaluation and pretty-prints report
+   - Throws error if any tests fail
+
+3. **Test level**: Simple test cases
+   ```typescript
+   test('validate replacements', () => {
+       const corrector = createTextCorrectorForGlobalEvaluation();
+       evaluateDataset('replacements', corrector);
+   });
+   ```
+
+### Test Factory Pattern
+
+`createTextCorrectorForGlobalEvaluation()` creates a corrector with:
+- Algorithm: FrenchSonnexAlgorithm
+- Threshold: 0.7
+- Debug: false
+- KeepNgramEvaluations: true (for detailed error reporting)
+- **Note**: Vocabulary is NOT set by factory; use `setVocabulary()` or let `evaluateDataset()` handle it
+
+### Evaluation Reports
+
+Reports include per-target and global statistics:
+- `totalTests`: Number of test cases
+- `passed`: Number of successful corrections
+- `successRate`: Percentage of passed tests (0-100)
+- `targetReports[]`: Array of per-target results
+  - `target`: The canonical term being tested
+  - `errors[]`: Detailed error information for failed cases:
+    - `input`: The misrecognized text variant
+    - `inputPhoneticKey`: Phonetic encoding of input
+    - `vocabularyBestMatch`: Best match found in vocabulary
+    - `vocabularyBestMatchPhoneticKey`: Phonetic encoding of best match
+    - `similarityScore`: Similarity between phonetic keys (0-1)
+    - `correctionApplied`: Whether correction was applied (score >= threshold)
+    - `actual`: Final corrected text (or unchanged if correction failed)
 
 ### Jest Configuration (jest.config.cjs)
 
@@ -117,6 +209,7 @@ npm test
 
 # Specific test file
 npx jest tests/simple/text-corrector.service.spec.ts
+npx jest tests/global-evaluations/global-evaluation.spec.ts
 
 # With coverage
 npx jest --coverage
@@ -208,7 +301,7 @@ Both services implement the `TextCorrector` interface. To create a custom correc
 ```
 src/
 ├── index.ts                              # Public API exports
-├── types.ts                              # Core type definitions
+├── types.ts                              # Core type definitions (including test types)
 ├── utils.ts                              # Levenshtein ratio utility
 ├── text-corrector-simple.service.ts      # Simple phonetic corrector
 ├── text-corrector-advanced.service.ts    # Advanced multi-factor corrector
@@ -219,8 +312,14 @@ src/
 
 tests/
 ├── simple/                               # Unit tests
+│   └── text-corrector.service.spec.ts
 └── global-evaluations/                   # Corpus-based evaluation tests
-    └── fixtures/                         # Test data in markdown format
+    ├── global-evaluation.spec.ts         # Test suite
+    ├── text-corrector-factory.ts         # Factory for test corrector instances
+    ├── evaluation-runner.ts              # Test execution and reporting logic
+    └── fixtures/
+        ├── correspondance-dataset-original/  # Source markdown files
+        └── correspondance-dataset/           # Generated YAML fixtures
 
 scripts/
 └── merge-replacements.ts                 # Fixture processing utility
