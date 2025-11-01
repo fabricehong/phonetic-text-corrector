@@ -391,20 +391,6 @@ The library is fully browser-compatible:
 - ✅ All dependencies are browser-safe
 - ✅ Works in modern browsers and Node.js
 
-## Performance Considerations
-
-- **Pre-computed phonetic keys**: Vocabulary terms are encoded once during `setVocabulary()`
-- **Fast lookups**: Uses `Map` for O(1) phonetic key retrieval
-- **Optimized string distance**: Uses `fastest-levenshtein` library
-- **Greedy n-gram matching**: Processes positions once (no re-evaluation)
-
-## Limitations
-
-1. **No automatic preprocessing**: Text is not automatically lowercased or normalized
-2. **No special symbol handling**: Symbols are encoded directly by phonetic algorithms
-3. **Greedy matching**: Once a position is processed, it cannot be re-evaluated
-4. **Threshold-based**: Only matches ≥ threshold are applied (no automatic adjustment)
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
