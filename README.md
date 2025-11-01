@@ -23,12 +23,6 @@ Perfect for correcting:
 - **Multi-word expressions**: Phrases often mistranscribed by speech recognition engines
 - **Technical terminology**: Company-specific jargon and domain-specific vocabulary
 
-## Installation
-
-```bash
-npm install phonetic-text-corrector
-```
-
 ## Quick Start
 
 ```typescript
