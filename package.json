@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "process-replacements": "tsx scripts/merge-replacements.ts"
+    "process-replacements": "tsx scripts/merge-replacements.ts",
+    "generate-vocabulary": "tsx scripts/generate-vocabulary.ts"
   },
   "keywords": [
     "phonetic",

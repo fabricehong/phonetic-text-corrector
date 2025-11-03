@@ -1,7 +1,3 @@
-# Project specific
-tests/global-evaluations/fixtures/correspondance-dataset-original/
-tests/global-evaluations/fixtures/correspondance-dataset/replacements-*.yaml
-
 # Build outputs
 dist/
 build/
