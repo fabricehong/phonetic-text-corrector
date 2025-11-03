@@ -21,4 +21,25 @@ describe('TextCorrectorService', () => {
         expect(result.correctedText).toContain('Hacon');
     });
 
+    test('correction includes phonetic keys', () => {
+        const text = "Hakon";
+        const result = corrector.correctText(text);
+
+        expect(result.corrections).toHaveLength(1);
+        expect(result.corrections[0]).toMatchObject({
+            original: 'Hakon',
+            corrected: 'Hacon',
+            similarityScore: expect.any(Number)
+        });
+
+        // Check that phonetic keys are present
+        expect(result.corrections[0].originalTextKey).toBeDefined();
+        expect(result.corrections[0].vocabularyTextKey).toBeDefined();
+        expect(typeof result.corrections[0].originalTextKey).toBe('string');
+        expect(typeof result.corrections[0].vocabularyTextKey).toBe('string');
+
+        // Both should have the same phonetic key since they sound the same
+        expect(result.corrections[0].originalTextKey).toBe(result.corrections[0].vocabularyTextKey);
+    });
+
 });

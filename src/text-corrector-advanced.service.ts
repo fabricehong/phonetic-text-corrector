@@ -103,15 +103,15 @@ export class TextCorrectorAdvancedService implements TextCorrector{
         };
     }
 
-    private findBestMatch(text: string): [string | null, number, { matchType: 'exact' | 'phonetic', stringSimilarity: number, phoneticSimilarity: number, lengthPenalty: number }] {
+    private findBestMatch(text: string): [string | null, number, { matchType: 'exact' | 'phonetic', stringSimilarity: number, phoneticSimilarity: number, lengthPenalty: number, originalTextKey: string, vocabularyTextKey: string }] {
         if (!text || text.length < 2) {
-            return [null, 0, { matchType: 'exact', stringSimilarity: 0, phoneticSimilarity: 0, lengthPenalty: 0 }];
+            return [null, 0, { matchType: 'exact', stringSimilarity: 0, phoneticSimilarity: 0, lengthPenalty: 0, originalTextKey: '', vocabularyTextKey: '' }];
         }
 
         const textKey = this.phoneticAlgorithm.encode(this.toSpokenForm(text)) || '';
         let bestMatch: string | null = null;
         let bestScore = -Infinity;
-        let matchDetails: { matchType: 'exact' | 'phonetic', stringSimilarity: number, phoneticSimilarity: number, lengthPenalty: number } = { matchType: 'exact', stringSimilarity: 0, phoneticSimilarity: 0, lengthPenalty: 0 };
+        let matchDetails: { matchType: 'exact' | 'phonetic', stringSimilarity: number, phoneticSimilarity: number, lengthPenalty: number, originalTextKey: string, vocabularyTextKey: string } = { matchType: 'exact', stringSimilarity: 0, phoneticSimilarity: 0, lengthPenalty: 0, originalTextKey: textKey, vocabularyTextKey: '' };
         let bestDebugInfo: string[] = [];
 
         this.debugPrint(`\nTrying to match text: '${text}'`);
@@ -121,7 +121,8 @@ export class TextCorrectorAdvancedService implements TextCorrector{
         const exactMatch = this.vocabulary.find(word => word.toLowerCase() === text.toLowerCase());
         if (exactMatch) {
             this.debugPrint('Found exact match (case-insensitive)');
-            return [exactMatch, 1.0, { matchType: 'exact', stringSimilarity: 1.0, phoneticSimilarity: 1.0, lengthPenalty: 1.0 }];
+            const exactMatchKey = this.vocabularyPhonetic.get(exactMatch) || '';
+            return [exactMatch, 1.0, { matchType: 'exact', stringSimilarity: 1.0, phoneticSimilarity: 1.0, lengthPenalty: 1.0, originalTextKey: textKey, vocabularyTextKey: exactMatchKey }];
         }
 
         for (const ref of this.vocabulary) {
@@ -166,7 +167,9 @@ export class TextCorrectorAdvancedService implements TextCorrector{
                     matchType: 'phonetic',
                     stringSimilarity,
                     phoneticSimilarity,
-                    lengthPenalty
+                    lengthPenalty,
+                    originalTextKey: textKey,
+                    vocabularyTextKey: refKey
                 };
                 bestDebugInfo = [...currentDebugInfo, `  -> New best match! Score: ${bestScore.toFixed(3)}`];
             }
@@ -179,7 +182,7 @@ export class TextCorrectorAdvancedService implements TextCorrector{
             this.debugPrint('No match found');
         }
 
-        return bestMatch ? [bestMatch, bestScore, matchDetails] : [null, 0, { matchType: 'exact', stringSimilarity: 0, phoneticSimilarity: 0, lengthPenalty: 0 }];
+        return bestMatch ? [bestMatch, bestScore, matchDetails] : [null, 0, { matchType: 'exact', stringSimilarity: 0, phoneticSimilarity: 0, lengthPenalty: 0, originalTextKey: textKey, vocabularyTextKey: '' }];
     }
 
     private toSpokenForm(text: string): string {

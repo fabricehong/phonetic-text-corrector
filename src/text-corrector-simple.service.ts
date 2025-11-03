@@ -100,7 +100,9 @@ export class TextCorrectorSimpleService implements TextCorrector {
                     original: ngram,
                     corrected: bestMatch,
                     position: [start, end],
-                    similarityScore: similarity
+                    similarityScore: similarity,
+                    originalTextKey: ngramPhoneticKey,
+                    vocabularyTextKey: bestMatchPhoneticKey || ''
                 });
             }
         }

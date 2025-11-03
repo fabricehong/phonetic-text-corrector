@@ -5,6 +5,8 @@ export interface CorrectionDetail {
     corrected: string;
     position: [number, number];  // [start, end]
     similarityScore: number;
+    originalTextKey: string;      // phonetic key of the matched text
+    vocabularyTextKey: string;    // phonetic key of the vocabulary term it matched with
 }
 
 export interface NgramEvaluation {
