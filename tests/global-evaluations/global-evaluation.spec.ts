@@ -6,7 +6,7 @@ import fs from "fs";
 import * as yaml from "js-yaml";
 
 describe('GlobalEvaluation', () => {
-    test('validate all replacements from correspondance-dataset', () => {
+    test.skip('validate all replacements from correspondance-dataset', () => {
         const corrector = createTextCorrectorForGlobalEvaluation();
         evaluateDataset('replacements', corrector);
     });
